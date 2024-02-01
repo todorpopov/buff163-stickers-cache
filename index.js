@@ -8,18 +8,22 @@ const cron = require('node-cron');
 
 let stickers = []
 
+app.get("/", (req, res) => {
+    res.send({msg: "A dedicated Express API that scrapes, stores, and updates sticker prices"})
+})
+
 app.get("/api/:stickerName", (req, res) => {
     const name = req.params.stickerName
     const price = checkPrice(name.replaceAll("*", " "))
     res.send({name: name.replaceAll("*", " "), price: price})
 })
 
-app.get("/api", (req, res) => {
+app.get("/array", (req, res) => {
     res.send(stickers)
 })
 
-app.get("/api/array_length", (req, res) => {
-    res.send(stickers.length)
+app.get("/length", (req, res) => {
+    res.send(String(stickers.length))
 })
 
 app.listen(port, () => {

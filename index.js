@@ -70,6 +70,7 @@ function parseFile(){
 
 
 async function fetchStickerPrice(stickerCode){
+    const start = performance.now()
     const url = `https://buff.163.com/api/market/goods/sell_order?game=csgo&goods_id=${stickerCode}&page_num=1`
 
     const stickerInfo = await fetch(url, {method: 'GET'})
@@ -83,6 +84,10 @@ async function fetchStickerPrice(stickerCode){
     })
 
     const averagePrice = prices.reduce((a, b) => a + b, 0) / prices.length
+
+    const end = performance.now()
+    console.log(`\n---Endpoint Fetch---\nItem code: ${stickerCode}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
+
     return averagePrice.toFixed(2)
 }
 
@@ -104,7 +109,7 @@ async function stickerPrice(itemObject){
     })
     
     const end = performance.now()
-    console.log(`\nItem code: ${itemObject.code}\nItem name: ${itemObject.name}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
+    console.log(`\n---Fetch and Append---\nItem code: ${itemObject.code}\nItem name: ${itemObject.name}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
 }
 
 

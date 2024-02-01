@@ -18,6 +18,12 @@ app.get("/api/:stickerName", (req, res) => {
     res.send({name: name.replaceAll("*", " "), price: price})
 })
 
+app.get("/api/fetch/:itemCode", async (req, res) => {
+    const itemCode = req.params.itemCode
+    const stickerPrice = await fetchStickerPrice(itemCode)
+    res.send({code: itemCode, price: stickerPrice})
+})
+
 app.get("/array", (req, res) => {
     res.send(stickers)
 })

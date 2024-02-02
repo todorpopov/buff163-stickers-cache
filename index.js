@@ -71,7 +71,12 @@ function parseFile(){
 async function fetchStickerPrice(stickerCode){
     const url = `https://buff.163.com/api/market/goods/sell_order?game=csgo&goods_id=${stickerCode}&page_num=1`
 
-    const stickerInfo = await fetch(url, {method: 'GET'}).then(res => res.json()).catch(err => console.error('\n\nerror: ' + err)) || {}
+    let stickerInfo = await fetch(url, {method: 'GET'}).then(res => res.text()).catch(err => console.error('\n\nerror: ' + err)) || {}
+    if(stickerInfo[0] === "<"){
+        return
+    }else{
+        stickerInfo = JSON.parse(stickerInfo)
+    }
 
     if(stickerInfo.code !== "OK"){ 
         console.log(`\n\n!!!Request returned status code: ${stickerInfo.code}!!!`)

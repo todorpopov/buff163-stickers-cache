@@ -4,7 +4,6 @@ const port = 3000
 
 const path = require('path')
 const fs = require('fs')
-const cron = require('node-cron');
 
 let stickers = []
 
@@ -14,8 +13,8 @@ app.get("/", (req, res) => {
 
 app.get("/api/:stickerName", (req, res) => {
     const name = req.params.stickerName
-    const price = checkPrice(name.replaceAll("*", " "))
-    res.send({name: name.replaceAll("*", " "), price: price})
+    const price = checkPrice(name)
+    res.send({name: name, price: price})
 })
 
 app.get("/api/fetch/:itemCode", async (req, res) => {
@@ -25,7 +24,7 @@ app.get("/api/fetch/:itemCode", async (req, res) => {
 })
 
 app.get("/array", (req, res) => {
-    res.send(stickers)
+    res.send([...stickers])
 })
 
 app.get("/length", (req, res) => {
@@ -70,13 +69,14 @@ function parseFile(){
 
 
 async function fetchStickerPrice(stickerCode){
-    const start = performance.now()
     const url = `https://buff.163.com/api/market/goods/sell_order?game=csgo&goods_id=${stickerCode}&page_num=1`
 
-    const stickerInfo = await fetch(url, {method: 'GET'})
-        .then(res => res.json())
-        .catch(err => console.error('error:' + err)) || []
-    if(stickerInfo.code !== "OK"){ return }
+    const stickerInfo = await fetch(url, {method: 'GET'}).then(res => res.json()).catch(err => console.error('\n\nerror: ' + err)) || {}
+
+    if(stickerInfo.code !== "OK"){ 
+        console.log(`\n\n!!!Request returned status code: ${stickerInfo.code}!!!`)
+        return 
+    }
 
     const prices = []
     stickerInfo.data.items.forEach(item => {
@@ -84,10 +84,6 @@ async function fetchStickerPrice(stickerCode){
     })
 
     const averagePrice = prices.reduce((a, b) => a + b, 0) / prices.length
-
-    const end = performance.now()
-    console.log(`\n---Endpoint Fetch---\nItem code: ${stickerCode}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
-
     return averagePrice.toFixed(2)
 }
 
@@ -109,7 +105,7 @@ async function stickerPrice(itemObject){
     })
     
     const end = performance.now()
-    console.log(`\n---Fetch and Append---\nItem code: ${itemObject.code}\nItem name: ${itemObject.name}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
+    console.log(`\n---Append---\nItem code: ${itemObject.code}\nItem name: ${itemObject.name}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
 }
 
 
@@ -118,10 +114,16 @@ const file = parseFile()
 async function cycleQueue(){
     for(const item of file){
         await stickerPrice(item)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // await new Promise(resolve => setTimeout(resolve, 1000))
     }
 }
 
-cron.schedule("* */6 * * *", async () => {
-    await cycleQueue()
-})
+// cron.schedule("*/1 * * * *", async () => {
+//     await cycleQueue()
+// })
+
+(async() => {
+    while(true){ 
+        await cycleQueue()
+    }
+}).call()

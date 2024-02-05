@@ -89,13 +89,8 @@ async function fetchStickerPrice(stickerCode){
         return 
     }
 
-    const prices = []
-    stickerInfo.data.items.forEach(item => {
-        prices.push(Number(item.price))
-    })
-
-    const averagePrice = prices.reduce((a, b) => a + b, 0) / prices.length
-    return averagePrice.toFixed(2)
+    const price = stickerInfo.data.goods_infos[`${stickerCode}`].steam_price_cny
+    return price
 }
 
 async function stickerPrice(itemObject){
@@ -106,6 +101,7 @@ async function stickerPrice(itemObject){
     for(let i = 0; i < stickers.length; i++){
         if(stickers[i].name === itemObject.name){
             stickers[i].price = averagePrice
+            console.log(`\nUpdated the price for an existing sticker!\nName: ${stickers[i].price} | New Price: ${averagePrice}`)
             return
         }
     }
@@ -137,6 +133,7 @@ const file = parseFile()
 async function cycleQueue(){
     for(const item of file){
         await stickerPrice(item)
+        await new Promise(resolve => setTimeout(resolve, 5000));
     }
     shuffleQueue()
 }

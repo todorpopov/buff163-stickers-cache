@@ -7,8 +7,13 @@ const fs = require('fs')
 
 let stickers = []
 
-app.get("/", (req, res) => {
+app.get("/", async(req, res) => {
     res.send({msg: "A dedicated Express API that scrapes, stores, and updates sticker prices"})
+})
+
+app.get("/start_queue", (req, res) => {
+    cycleQueue()
+    res.send({msg: "Queue has been started"})
 })
 
 app.get("/api/:stickerName", (req, res) => {
@@ -73,13 +78,14 @@ async function fetchStickerPrice(stickerCode){
 
     let stickerInfo = await fetch(url, {method: 'GET'}).then(res => res.text()).catch(err => console.error('\n\nerror: ' + err)) || {}
     if(stickerInfo[0] === "<"){
+        console.log(stickerInfo)
         return
     }else{
         stickerInfo = JSON.parse(stickerInfo)
     }
 
     if(stickerInfo.code !== "OK"){ 
-        console.log(`\n\n!!!Request returned status code: ${stickerInfo.code}!!!`)
+        console.log(`\n\nReturned status code: ${stickerInfo.code}`)
         return 
     }
 
@@ -114,21 +120,23 @@ async function stickerPrice(itemObject){
 }
 
 
-
-const file = parseFile() 
-async function cycleQueue(){
-    for(const item of file){
-        await stickerPrice(item)
-        // await new Promise(resolve => setTimeout(resolve, 1000))
+function shuffleQueue() {
+    let currentIndex = file.length,  randomIndex;
+  
+    while (currentIndex > 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+  
+      [file[currentIndex], file[randomIndex]] = [
+        file[randomIndex], file[currentIndex]];
     }
 }
 
-// cron.schedule("*/1 * * * *", async () => {
-//     await cycleQueue()
-// })
+const file = parseFile() 
 
-(async() => {
-    while(true){ 
-        await cycleQueue()
+async function cycleQueue(){
+    for(const item of file){
+        await stickerPrice(item)
     }
-}).call()
+    shuffleQueue()
+}

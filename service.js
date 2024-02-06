@@ -46,7 +46,14 @@ async function fetchStickerPrice(stickerCode){
         return 
     }
 
-    const price = stickerInfo.data.goods_infos[`${stickerCode}`].steam_price_cny
+    let price = 0
+    try{
+        price = stickerInfo.data.goods_infos[`${stickerCode}`].steam_price_cny
+    }catch(err){
+        console.log(err)
+        return
+    }
+    
     return price
 }
 

@@ -58,7 +58,7 @@ async function stickerPrice(itemObject, stickersArray){
     for(let i = 0; i < stickersArray.length; i++){
         if(stickersArray[i].name === itemObject.name){
             stickersArray[i].price = averagePrice
-            console.log(`\nUpdated the price for an existing sticker!\nName: ${stickersArray[i].price} | New Price: ${averagePrice}`)
+            console.log(`\nUpdated the price for sticker: ${stickersArray[i].name}\n Old Price: ${stickersArray[i].price} | New Price: ${averagePrice}`)
             return
         }
     }

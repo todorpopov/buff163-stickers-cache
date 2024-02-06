@@ -12,9 +12,9 @@ app.get("/", async(req, res) => {
     res.send({msg: "A dedicated Express API that scrapes, stores, and updates sticker prices"})
 })
 
-app.get("/start_queue", (req, res) => {
-    service.cycleQueue(file, stickers)
+app.get("/start_queue", async (req, res) => {
     res.send({msg: "Queue has been started"})
+    await service.cycleQueue(file, stickers)
 })
 
 app.get("/api/:stickerName", (req, res) => {
@@ -37,6 +37,6 @@ app.listen(port, () => {
     console.log(`Started on port: ${port} | Date: ${new Date()}`)
 })
 
-cron.schedule('0 0 * * *', () => {
-    service.cycleQueue(file, stickers)
+cron.schedule('0 0 * * *', async () => {
+    await service.cycleQueue(file, stickers)
 })

@@ -19,10 +19,7 @@ function parseFile(filename){
         const splitLines = data.split('\n')
         for(let i = 0; i < splitLines.length; i++) {
             const splitLine = splitLines[i].split(';')
-            fileContent.push({
-                code: splitLine[0],
-                name: splitLine[1]
-            })
+            fileContent.push(splitLine[0])
         }
     } catch (err) {
         console.error(err);
@@ -30,73 +27,71 @@ function parseFile(filename){
     return fileContent
 }
 
-async function fetchStickerPrice(stickerCode){
-    const url = `https://buff.163.com/api/market/goods/sell_order?game=csgo&goods_id=${stickerCode}&page_num=1`
-
-    let stickerInfo = await fetch(url, {method: 'GET'}).then(res => res.text()).catch(err => console.error('\n\nerror: ' + err)) || {}
-    if(stickerInfo[0] === "<"){
-        console.log(stickerInfo)
-        return
-    }else{
-        stickerInfo = JSON.parse(stickerInfo)
+async function fetchStickerObject(stickerCode){
+    const url = `https://buff.163.com/api/market/goods/sell_order?game=csgo&goods_id=${stickerCode}`
+    const options = {
+        method: 'GET',
+        headers: {Accept: '*/*'}
     }
 
-    if(stickerInfo.code !== "OK"){ 
-        console.log(`\n\nReturned status code: ${stickerInfo.code}`)
-        return 
-    }
+    const stickerInfo = await fetch(url, options).then(res => res.text()).catch(err => console.error(err))
 
-    let price = 0
+    let infoJSON = {}
+    let stickerName = ""
+    let stickerPrice = 0
     try{
-        price = stickerInfo.data.goods_infos[`${stickerCode}`].steam_price_cny
-    }catch(err){
-        console.log(err)
+        infoJSON = JSON.parse(stickerInfo)
+
+        const stickerGoodsInfo = infoJSON.data.goods_infos[`${stickerCode}`]
+        stickerName = stickerGoodsInfo.name
+        stickerPrice = stickerGoodsInfo.steam_price_cny
+    }catch(error){
+        console.log(stickerCode + ': ' + error)
         return
     }
     
-    return price
+    return { code: stickerCode, name: stickerName, price: stickerPrice }
 }
 
-async function stickerPrice(itemObject, stickersArray){
+async function stickerPrice(stickerCode, stickersArray){
     const start = performance.now()
 
-    const averagePrice = await fetchStickerPrice(itemObject.code)
-    
+    const stickerObject = await fetchStickerObject(stickerCode)
+
     for(let i = 0; i < stickersArray.length; i++){
-        if(stickersArray[i].name === itemObject.name){
-            stickersArray[i].price = averagePrice
-            console.log(`\nUpdated the price for sticker: ${stickersArray[i].name}\n Old Price: ${stickersArray[i].price} | New Price: ${averagePrice}`)
-            return
+        if(stickersArray[i].code === stickerObject.code){
+            if(stickersArray[i].price !== stickerObject.price || stickersArray[i].name !== stickerObject.name){
+                stickersArray[i].price = stickerObject.price
+                stickersArray[i].name = stickerObject.name
+                console.log(`\nUpdated the price or name for code: ${stickersArray[i].code}`)
+                return
+            }
         }
     }
     
-    stickersArray.push({
-        name: itemObject.name,
-        price: averagePrice
-    })
+    stickersArray.push(stickerObject)
     
     const end = performance.now()
-    console.log(`\n---Append---\nItem code: ${itemObject.code}\nItem name: ${itemObject.name}\nPrice: ${averagePrice}\nTime: ${(end-start).toFixed(2)} ms`)
+    console.log(`\n---Append---\nItem code: ${stickerCode}\nItem name: ${stickerObject.name}\nPrice: ${stickerObject.price}\nTime: ${(end-start).toFixed(2)} ms`)
 }
 
 function shuffleQueue(queue) {
     let currentIndex = queue.length,  randomIndex;
   
     while (currentIndex > 0) {
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
+        randomIndex = Math.floor(Math.random() * currentIndex)
+        currentIndex--
   
-      [queue[currentIndex], queue[randomIndex]] = [
-        queue[randomIndex], queue[currentIndex]];
+        [queue[currentIndex], queue[randomIndex]] = [queue[randomIndex], queue[currentIndex]]
     }
 }
 
 async function cycleQueue(queueArray, stickersArray){
-    for(item of queueArray){
-        await stickerPrice(item, stickersArray)
-        await new Promise(resolve => setTimeout(resolve, 5000));
+    for(itemCode of queueArray){
+        await stickerPrice(itemCode, stickersArray)
+        await new Promise(resolve => setTimeout(resolve, 5000))
     }
     shuffleQueue(queueArray)
 }
 
-module.exports = {checkPrice, parseFile, fetchStickerPrice, stickerPrice, shuffleQueue, cycleQueue}
+module.exports = {checkPrice, parseFile, fetchStickerObject, stickerPrice, shuffleQueue, cycleQueue}
